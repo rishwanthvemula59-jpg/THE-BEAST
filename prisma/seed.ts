@@ -200,6 +200,11 @@ async function main() {
     }
   })
 
+  // Reset sequences so new records don't conflict with seeded explicit IDs
+  await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"Member"', 'id'), MAX(id)) FROM "Member"`)
+  await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"Attendance"', 'id'), MAX(id)) FROM "Attendance"`)
+  await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"MessageAlert"', 'id'), MAX(id)) FROM "MessageAlert"`)
+
   console.log("Database seeded successfully!")
 }
 
