@@ -1,0 +1,47 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Member {
+  id             Int          @id @default(autoincrement())
+  name           String
+  email          String       @unique
+  phone          String
+  status         String       // "active" | "expiring" | "expired" | "inactive"
+  joinDate       String
+  expiryDate     String
+  membershipType String       // "Weekly" | "Monthly" | "Quarterly" | "Annual"
+  attendance     Attendance[]
+}
+
+model Attendance {
+  id         Int    @id @default(autoincrement())
+  memberId   Int
+  memberName String
+  date       String
+  time       String
+  status     String // "present" | "absent"
+  member     Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model MessageAlert {
+  id        Int    @id @default(autoincrement())
+  title     String
+  content   String
+  type      String // "announcement" | "reminder" | "alert"
+  recipient String
+  date      String
+}
+
+model Settings {
+  id      Int    @id @default(1)
+  gymName String @default("The Fitness Gym")
+  email   String @default("support@fitnessgym.com")
+  phone   String @default("+1 (555) 999-8888")
+  address String @default("123 Main St, New York, NY")
+}

@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-[#f8fafc] text-slate-800 font-sans;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}
+
+/* Custom Button Styles */
+.btn-primary {
+  @apply px-6 py-2 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 transition-all duration-200 shadow-md shadow-primary-500/10 hover:shadow-lg hover:shadow-primary-500/20 active:scale-95;
+}
+
+.btn-secondary {
+  @apply px-6 py-2 bg-slate-100/80 text-slate-700 rounded-lg font-semibold hover:bg-slate-200 transition-all duration-200 border border-slate-200/20 active:scale-95;
+}
+
+.btn-ghost {
+  @apply px-6 py-2 text-slate-600 rounded-lg font-semibold hover:bg-slate-50 transition-all duration-200 active:scale-95;
+}
+
+/* Card Styles */
+.card {
+  @apply bg-white/80 backdrop-blur-md rounded-xl border border-slate-100/80 p-6 shadow-[0_8px_30px_rgb(241,245,249,0.7)] transition-all duration-300;
+}
+
+.card-hover {
+  @apply card hover:shadow-[0_12px_40px_rgb(226,232,240,0.6)] hover:border-slate-200 hover:-translate-y-1;
+}
+
+/* Global Heading Font Mapping */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+  @apply tracking-tight;
+}
