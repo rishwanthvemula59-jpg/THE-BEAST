@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useGymStore, Member } from '@/store/gymStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -209,9 +210,7 @@ export default function Dashboard() {
             </div>
             <button onClick={async () => {
               await fetch('/api/auth/logout', { method: 'POST' });
-              // redirect to login page
-              const { push } = (await import('next/navigation')).default;
-              push('/login');
+              window.location.href = '/login';
             }} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">Logout</button>
           </div>
         <div className="bg-white/80 border border-slate-150/80 px-4 py-2.5 rounded-xl flex items-center gap-2 text-slate-600 shadow-sm shadow-slate-100/50 backdrop-blur-md self-start md:self-center">
