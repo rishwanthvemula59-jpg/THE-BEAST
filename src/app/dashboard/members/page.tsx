@@ -24,6 +24,25 @@ const getWhatsAppLink = (phone: string) => {
   return `https://wa.me/${digits}`
 }
 
+const getExpiryDisplay = (expiryDateStr: string) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const expiry = new Date(expiryDateStr)
+  expiry.setHours(0, 0, 0, 0)
+  
+  const diffTime = expiry.getTime() - today.getTime()
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  
+  if (diffDays < 0) {
+    const absDays = Math.abs(diffDays)
+    return `Expired ${absDays} day${absDays > 1 ? 's' : ''} ago`
+  } else if (diffDays === 0) {
+    return 'Expires Today'
+  } else {
+    return `In ${diffDays} day${diffDays > 1 ? 's' : ''}`
+  }
+}
+
 // Framer Motion Variants
 const listVariants = {
   hidden: { opacity: 0 },
@@ -277,7 +296,7 @@ export default function MembersPage() {
                 <th className="py-4 px-6 text-slate-400 font-bold uppercase tracking-wider text-[10px]">Contact Info</th>
                 <th className="py-4 px-6 text-slate-400 font-bold uppercase tracking-wider text-[10px]">Status</th>
                 <th className="py-4 px-6 text-slate-400 font-bold uppercase tracking-wider text-[10px]">Membership Plan</th>
-                <th className="py-4 px-6 text-slate-400 font-bold uppercase tracking-wider text-[10px]">Expiry Date</th>
+                <th className="py-4 px-6 text-slate-400 font-bold uppercase tracking-wider text-[10px]">Expires In</th>
                 <th className="py-4 px-6 text-slate-400 font-bold uppercase tracking-wider text-[10px] text-right">Action</th>
               </tr>
             </thead>
@@ -327,8 +346,15 @@ export default function MembersPage() {
                       {member.membershipType}
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-slate-600 text-xs font-bold font-sans">
-                    {member.expiryDate}
+                  <td className="py-4 px-6">
+                    <p className={`text-xs font-bold font-sans ${
+                      member.status === 'expired' ? 'text-red-500' : member.status === 'expiring' ? 'text-yellow-600' : 'text-slate-700'
+                    }`}>
+                      {getExpiryDisplay(member.expiryDate)}
+                    </p>
+                    <p className="text-[9px] text-slate-400 font-bold font-sans mt-0.5" title="Exact Expiry Date">
+                      {member.expiryDate}
+                    </p>
                   </td>
                   <td className="py-4 px-6 text-right">
                     <button

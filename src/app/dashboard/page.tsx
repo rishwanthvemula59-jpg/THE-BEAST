@@ -41,6 +41,25 @@ const modalVariants = {
   show: { scale: 1, opacity: 1, transition: { type: 'spring', duration: 0.3 } }
 }
 
+const getExpiryDisplay = (expiryDateStr: string) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const expiry = new Date(expiryDateStr)
+  expiry.setHours(0, 0, 0, 0)
+  
+  const diffTime = expiry.getTime() - today.getTime()
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  
+  if (diffDays < 0) {
+    const absDays = Math.abs(diffDays)
+    return `Expired ${absDays} day${absDays > 1 ? 's' : ''} ago`
+  } else if (diffDays === 0) {
+    return 'Expires Today'
+  } else {
+    return `In ${diffDays} day${diffDays > 1 ? 's' : ''}`
+  }
+}
+
 export default function Dashboard() {
   const {
     members,
@@ -482,7 +501,9 @@ export default function Dashboard() {
                       <div className="flex justify-between items-start gap-2">
                         <div className="min-w-0">
                           <p className="text-slate-800 font-bold text-xs truncate">{member.name}</p>
-                          <p className="text-slate-500 text-[9px] font-bold mt-0.5 uppercase tracking-wider font-sans">Expires: {member.expiryDate}</p>
+                          <p className="text-slate-500 text-[9px] font-bold mt-0.5 uppercase tracking-wider font-sans">
+                            Expires: {getExpiryDisplay(member.expiryDate)} ({member.expiryDate})
+                          </p>
                         </div>
                         <span className="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase bg-yellow-50 text-yellow-600 border border-yellow-100 font-sans">
                           {member.membershipType}
