@@ -2,7 +2,7 @@ services:
   - type: web
     name: the-beast-fitness-gym
     env: node
-    region: singapore
+    region: oregon
     plan: free
     buildCommand: npm install && npm run build
     startCommand: npm run start
@@ -17,4 +17,4 @@ services:
 databases:
   - name: gym-postgres
     plan: free
-    region: singapore
+    region: oregon
