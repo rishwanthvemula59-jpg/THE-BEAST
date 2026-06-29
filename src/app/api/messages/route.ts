@@ -7,8 +7,9 @@ export async function GET() {
       orderBy: { id: 'desc' }
     })
     return NextResponse.json({ data: messages })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch messages outbox logs' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Failed to fetch messages:', error)
+    return NextResponse.json({ error: error.message || 'Failed to fetch messages outbox logs' }, { status: 500 })
   }
 }
 
@@ -40,7 +41,8 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ data: newMessage }, { status: 201 })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to log notification message' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Failed to log message:', error)
+    return NextResponse.json({ error: error.message || 'Failed to log notification message' }, { status: 500 })
   }
 }

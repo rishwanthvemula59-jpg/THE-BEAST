@@ -21,8 +21,9 @@ export async function GET() {
     }
 
     return NextResponse.json({ data: settings })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Failed to fetch settings:', error)
+    return NextResponse.json({ error: error.message || 'Failed to fetch settings' }, { status: 500 })
   }
 }
 
@@ -49,7 +50,8 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ data: settings })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Failed to save settings:', error)
+    return NextResponse.json({ error: error.message || 'Failed to save settings' }, { status: 500 })
   }
 }

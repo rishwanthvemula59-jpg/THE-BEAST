@@ -33,8 +33,23 @@ export default function AttendancePage() {
   const [memberSearchQuery, setMemberSearchQuery] = useState('')
   const [logSearchQuery, setLogSearchQuery] = useState('')
   const [logDateFilter, setLogDateFilter] = useState('')
+  const [checkInError, setCheckInError] = useState<string | null>(null)
+  const [checkingInId, setCheckingInId] = useState<number | null>(null)
 
   const todayStr = new Date().toISOString().split('T')[0]
+
+  const handleMarkAttendance = async (memberId: number) => {
+    setCheckInError(null)
+    setCheckingInId(memberId)
+    try {
+      await markAttendance(memberId)
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.message || 'Failed to check in'
+      setCheckInError(msg)
+    } finally {
+      setCheckingInId(null)
+    }
+  }
 
   // Stats calculation
   const totalCheckedInToday = attendance.filter((a) => a.date === todayStr).length
@@ -136,6 +151,12 @@ export default function AttendancePage() {
           <h2 className="text-lg font-bold text-slate-900 mb-1 font-display">Mark Check-in</h2>
           <p className="text-xs text-slate-500 mb-4">Search member by name/email and click check-in to log their attendance today.</p>
           
+          {checkInError && (
+            <p className="text-[10px] text-red-500 font-bold bg-red-50 border border-red-100 rounded-lg p-2.5 mb-3">
+              ⚠️ {checkInError}
+            </p>
+          )}
+
           <div className="relative mb-4">
             <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
             <input
@@ -173,10 +194,11 @@ export default function AttendancePage() {
                     </span>
                   ) : (
                     <button
-                      onClick={() => markAttendance(member.id)}
-                      className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs font-bold hover:bg-green-600 transition-all shrink-0 shadow-sm shadow-green-500/10 active:scale-95 font-sans"
+                      onClick={() => handleMarkAttendance(member.id)}
+                      disabled={checkingInId !== null}
+                      className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs font-bold hover:bg-green-600 transition-all shrink-0 shadow-sm shadow-green-500/10 active:scale-95 disabled:opacity-50 font-sans"
                     >
-                      Check In
+                      {checkingInId === member.id ? '...' : 'Check In'}
                     </button>
                   )}
                 </div>

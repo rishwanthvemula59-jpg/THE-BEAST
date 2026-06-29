@@ -37,6 +37,8 @@ export default function SettingsPage() {
 
   const [activeSection, setActiveSection] = useState('general')
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveLoading, setSaveLoading] = useState(false)
 
   // Sync state on load
   useEffect(() => {
@@ -57,22 +59,36 @@ export default function SettingsPage() {
     })
   }
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    updateSettings(formData)
+    setSaveError(null)
+    setSaveLoading(true)
+    setSaveSuccess(false)
+    try {
+      await updateSettings(formData)
 
-    // Send a message notification about settings update
-    sendMessage({
-      title: 'Gym Settings Updated',
-      content: `Gym configuration settings were updated successfully.`,
-      type: 'announcement',
-      recipient: 'All Members'
-    })
+      // Send a message notification about settings update
+      try {
+        await sendMessage({
+          title: 'Gym Settings Updated',
+          content: `Gym configuration settings were updated successfully.`,
+          type: 'announcement',
+          recipient: 'All Members'
+        })
+      } catch (sendErr) {
+        console.error('Failed to send settings update message notification', sendErr)
+      }
 
-    setSaveSuccess(true)
-    setTimeout(() => {
-      setSaveSuccess(false)
-    }, 3000)
+      setSaveSuccess(true)
+      setTimeout(() => {
+        setSaveSuccess(false)
+      }, 3000)
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.message || 'Failed to update settings'
+      setSaveError(msg)
+    } finally {
+      setSaveLoading(false)
+    }
   }
 
   return (
@@ -182,21 +198,29 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Save and Toast feedback */}
-                  <div className="flex items-center gap-4 pt-4">
-                    <button
-                      type="submit"
-                      className="btn-primary flex items-center gap-2 text-xs py-2.5 px-6 shadow-md shadow-primary-500/10 font-sans tracking-wide uppercase font-bold"
-                    >
-                      <Save size={16} />
-                      Save Configuration
-                    </button>
-
-                    {saveSuccess && (
-                      <span className="text-green-600 text-xs font-bold flex items-center gap-1.5 animate-fade-in font-sans">
-                        <CheckCircle size={14} className="text-green-600" />
-                        Settings updated successfully!
-                      </span>
+                  <div className="flex flex-col gap-3 pt-4">
+                    {saveError && (
+                      <div className="text-red-500 text-xs font-bold flex items-center gap-1.5 animate-fade-in font-sans bg-red-50 border border-red-100 rounded-lg p-2.5">
+                        ⚠️ {saveError}
+                      </div>
                     )}
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="submit"
+                        disabled={saveLoading}
+                        className="btn-primary flex items-center gap-2 text-xs py-2.5 px-6 shadow-md shadow-primary-500/10 font-sans tracking-wide uppercase font-bold disabled:opacity-50"
+                      >
+                        <Save size={16} />
+                        {saveLoading ? 'Saving...' : 'Save Configuration'}
+                      </button>
+
+                      {saveSuccess && (
+                        <span className="text-green-600 text-xs font-bold flex items-center gap-1.5 animate-fade-in font-sans">
+                          <CheckCircle size={14} className="text-green-600" />
+                          Settings updated successfully!
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </form>
               </motion.div>

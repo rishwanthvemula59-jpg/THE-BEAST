@@ -7,8 +7,9 @@ export async function GET() {
       orderBy: { id: 'asc' }
     })
     return NextResponse.json({ data: members })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch members' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Failed to fetch members:', error)
+    return NextResponse.json({ error: error.message || 'Failed to fetch members' }, { status: 500 })
   }
 }
 
@@ -42,7 +43,8 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ data: newMember }, { status: 201 })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to create member' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Failed to create member:', error)
+    return NextResponse.json({ error: error.message || 'Failed to create member' }, { status: 500 })
   }
 }

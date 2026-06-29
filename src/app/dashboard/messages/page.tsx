@@ -44,44 +44,55 @@ export default function MessagesPage() {
   // Search/Filter State
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | MessageAlert['type']>('all')
+  const [sendError, setSendError] = useState<string | null>(null)
+  const [sendLoading, setSendLoading] = useState(false)
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.title || !form.content) return
+    setSendError(null)
+    setSendLoading(true)
 
-    sendMessage({
-      title: form.title,
-      content: form.content,
-      type: form.type,
-      recipient: form.recipient
-    })
+    try {
+      await sendMessage({
+        title: form.title,
+        content: form.content,
+        type: form.type,
+        recipient: form.recipient
+      })
 
-    // Determine WhatsApp number and redirect
-    let waPhone = ''
-    if (form.recipient === 'All Members' ||
-        form.recipient === 'Active Members' ||
-        form.recipient === 'Expired Members' ||
-        form.recipient === 'Inactive Members') {
-      waPhone = '916281042207'
-    } else {
-      const targetMember = members.find(m => m.name === form.recipient)
-      if (targetMember) {
-        const digits = targetMember.phone.replace(/[^0-9]/g, '')
-        waPhone = digits.length === 10 ? `91${digits}` : digits
+      // Determine WhatsApp number and redirect
+      let waPhone = ''
+      if (form.recipient === 'All Members' ||
+          form.recipient === 'Active Members' ||
+          form.recipient === 'Expired Members' ||
+          form.recipient === 'Inactive Members') {
+        waPhone = '916281042207'
+      } else {
+        const targetMember = members.find(m => m.name === form.recipient)
+        if (targetMember) {
+          const digits = targetMember.phone.replace(/[^0-9]/g, '')
+          waPhone = digits.length === 10 ? `91${digits}` : digits
+        }
       }
-    }
 
-    if (waPhone) {
-      const waText = encodeURIComponent(`*${form.title}*\n\n${form.content}`)
-      window.open(`https://wa.me/${waPhone}?text=${waText}`, '_blank', 'noopener,noreferrer')
-    }
+      if (waPhone) {
+        const waText = encodeURIComponent(`*${form.title}*\n\n${form.content}`)
+        window.open(`https://wa.me/${waPhone}?text=${waText}`, '_blank', 'noopener,noreferrer')
+      }
 
-    setForm({
-      title: '',
-      content: '',
-      type: 'announcement',
-      recipient: 'All Members'
-    })
+      setForm({
+        title: '',
+        content: '',
+        type: 'announcement',
+        recipient: 'All Members'
+      })
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.message || 'Failed to log notification message'
+      setSendError(msg)
+    } finally {
+      setSendLoading(false)
+    }
   }
 
   // Filter messages
@@ -161,7 +172,7 @@ export default function MessagesPage() {
                 placeholder="e.g. Schedule Update or Renewal Reminder"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-850 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-primary-500 text-xs transition-colors"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-855 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-primary-500 text-xs transition-colors"
               />
             </div>
 
@@ -171,7 +182,7 @@ export default function MessagesPage() {
               <select
                 value={form.recipient}
                 onChange={(e) => setForm({ ...form, recipient: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-850 focus:outline-none focus:bg-white focus:border-primary-500 text-xs transition-colors font-semibold"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-855 focus:outline-none focus:bg-white focus:border-primary-500 text-xs transition-colors font-semibold"
               >
                 <option value="All Members">All Registered Members</option>
                 <option value="Active Members">Active Members Only</option>
@@ -213,22 +224,29 @@ export default function MessagesPage() {
                 placeholder="Type your message description here..."
                 value={form.content}
                 onChange={(e) => setForm({ ...form, content: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-850 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-primary-500 text-xs resize-none transition-colors"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-855 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-primary-500 text-xs resize-none transition-colors"
               />
             </div>
+
+            {sendError && (
+              <p className="text-[10px] text-red-500 font-bold bg-red-50 border border-red-100 rounded-lg p-2.5">
+                ⚠️ {sendError}
+              </p>
+            )}
 
             {/* Submit */}
             <button
               type="submit"
-              className="w-full btn-primary text-xs py-3 mt-4 flex items-center justify-center gap-2 shadow-md shadow-primary-500/10 font-sans tracking-wide"
+              disabled={sendLoading}
+              className="w-full btn-primary text-xs py-3 mt-4 flex items-center justify-center gap-2 shadow-md shadow-primary-500/10 font-sans tracking-wide disabled:opacity-50"
             >
               <Send size={16} />
-              {form.recipient !== 'All Members' &&
+              {sendLoading ? 'Sending...' : (form.recipient !== 'All Members' &&
                form.recipient !== 'Active Members' &&
                form.recipient !== 'Expired Members' &&
                form.recipient !== 'Inactive Members'
                 ? 'Send & Redirect to WhatsApp'
-                : 'Broadcast & Redirect to WhatsApp'}
+                : 'Broadcast & Redirect to WhatsApp')}
             </button>
           </form>
         </div>

@@ -66,11 +66,17 @@ export default function MembersPage() {
   // Edit / Renewal form state in detail modal
   const [isEditMode, setIsEditMode] = useState(false)
   const [editForm, setEditForm] = useState<Partial<Member>>({})
+  const [addError, setAddError] = useState<string | null>(null)
+  const [editError, setEditError] = useState<string | null>(null)
+  const [addLoading, setAddLoading] = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
 
   // Handle addition
-  const handleAddMember = (e: React.FormEvent) => {
+  const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!addForm.name || !addForm.email) return
+    setAddError(null)
+    setAddLoading(true)
 
     let finalExpiry = addForm.expiryDate
     if (!finalExpiry) {
@@ -79,49 +85,72 @@ export default function MembersPage() {
       finalExpiry = d.toISOString().split('T')[0]
     }
 
-    addMember({
-      name: addForm.name,
-      email: addForm.email,
-      phone: addForm.phone || '+1 (555) 000-0000',
-      status: addForm.status,
-      membershipType: addForm.membershipType,
-      expiryDate: finalExpiry
-    })
+    try {
+      await addMember({
+        name: addForm.name,
+        email: addForm.email,
+        phone: addForm.phone || '+1 (555) 000-0000',
+        status: addForm.status,
+        membershipType: addForm.membershipType,
+        expiryDate: finalExpiry
+      })
 
-    setAddForm({
-      name: '',
-      email: '',
-      phone: '',
-      status: 'active',
-      membershipType: 'Monthly',
-      expiryDate: ''
-    })
-    setIsAddModalOpen(false)
+      setAddForm({
+        name: '',
+        email: '',
+        phone: '',
+        status: 'active',
+        membershipType: 'Monthly',
+        expiryDate: ''
+      })
+      setIsAddModalOpen(false)
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.message || 'Failed to create member'
+      setAddError(msg)
+    } finally {
+      setAddLoading(false)
+    }
   }
 
   // Handle updates
-  const handleUpdateMember = (e: React.FormEvent) => {
+  const handleUpdateMember = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedMember || !editForm.name || !editForm.email) return
+    setEditError(null)
+    setEditLoading(true)
 
-    updateMember(selectedMember.id, editForm)
-    
-    sendMessage({
-      title: 'Member Profile Updated',
-      content: `Member profile was updated by the administrator.`,
-      type: 'announcement',
-      recipient: editForm.name || selectedMember.name
-    })
+    try {
+      await updateMember(selectedMember.id, editForm)
+      
+      try {
+        await sendMessage({
+          title: 'Member Profile Updated',
+          content: `Member profile was updated by the administrator.`,
+          type: 'announcement',
+          recipient: editForm.name || selectedMember.name
+        })
+      } catch (sendErr) {
+        console.error('Failed to send profile update message notification', sendErr)
+      }
 
-    setSelectedMember({
-      ...selectedMember,
-      ...editForm
-    } as Member)
-    setIsEditMode(false)
+      setSelectedMember({
+        ...selectedMember,
+        ...editForm
+      } as Member)
+      setIsEditMode(false)
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.message || 'Failed to update member'
+      setEditError(msg)
+    } finally {
+      setEditLoading(false)
+    }
   }
 
   // Handle direct renewal
-  const handleRenewMember = (member: Member, months: number = 1) => {
+  const handleRenewMember = async (member: Member, months: number = 1) => {
+    setEditError(null)
+    setEditLoading(true)
+
     const newExpDate = new Date()
     newExpDate.setMonth(newExpDate.getMonth() + months)
     const expiryStr = newExpDate.toISOString().split('T')[0]
@@ -131,25 +160,36 @@ export default function MembersPage() {
     else if (months === 3) membershipType = 'Quarterly'
     else if (months === 12) membershipType = 'Annual'
 
-    updateMember(member.id, {
-      status: 'active',
-      expiryDate: expiryStr,
-      membershipType
-    })
-    
-    sendMessage({
-      title: 'Subscription Extended',
-      content: `Membership plan renewed. New expiry date: ${expiryStr}.`,
-      type: 'reminder',
-      recipient: member.name
-    })
+    try {
+      await updateMember(member.id, {
+        status: 'active',
+        expiryDate: expiryStr,
+        membershipType
+      })
+      
+      try {
+        await sendMessage({
+          title: 'Subscription Extended',
+          content: `Membership plan renewed. New expiry date: ${expiryStr}.`,
+          type: 'reminder',
+          recipient: member.name
+        })
+      } catch (sendErr) {
+        console.error('Failed to send renewal message notification', sendErr)
+      }
 
-    setSelectedMember({
-      ...member,
-      status: 'active',
-      expiryDate: expiryStr,
-      membershipType
-    })
+      setSelectedMember({
+        ...member,
+        status: 'active',
+        expiryDate: expiryStr,
+        membershipType
+      })
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.message || 'Failed to renew member'
+      setEditError(msg)
+    } finally {
+      setEditLoading(false)
+    }
   }
 
   const filteredMembers = members.filter((member) => {
@@ -399,6 +439,11 @@ export default function MembersPage() {
                     </div>
                   </div>
 
+                  {editError && (
+                    <p className="text-[10px] text-red-500 font-bold bg-red-50 border border-red-100 rounded-lg p-2.5 mt-2">
+                      ⚠️ {editError}
+                    </p>
+                  )}
                   <div className="pt-4 border-t border-slate-100 mt-4 space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="flex-1">
@@ -419,6 +464,7 @@ export default function MembersPage() {
                         onClick={() => {
                           setIsEditMode(true)
                           setEditForm(selectedMember)
+                          setEditError(null)
                         }}
                         className="flex-1 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors flex items-center justify-center gap-1.5"
                       >
@@ -426,9 +472,10 @@ export default function MembersPage() {
                       </button>
                       <button
                         onClick={() => handleRenewMember(selectedMember, renewMonths)}
-                        className="flex-1 py-2.5 bg-primary-500 hover:bg-primary-600 rounded-xl text-xs font-bold text-white transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-primary-500/10 active:scale-95"
+                        disabled={editLoading}
+                        className="flex-1 py-2.5 bg-primary-500 hover:bg-primary-600 rounded-xl text-xs font-bold text-white transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-primary-500/10 active:scale-95 disabled:opacity-50"
                       >
-                        Renew
+                        {editLoading ? 'Renewing...' : 'Renew'}
                       </button>
                     </div>
                   </div>
@@ -502,19 +549,28 @@ export default function MembersPage() {
                     />
                   </div>
 
+                  {editError && (
+                    <p className="text-[10px] text-red-500 font-bold bg-red-50 border border-red-100 rounded-lg p-2.5">
+                      ⚠️ {editError}
+                    </p>
+                  )}
                   <div className="flex gap-2 pt-4">
                     <button
                       type="button"
-                      onClick={() => setIsEditMode(false)}
+                      onClick={() => {
+                        setIsEditMode(false)
+                        setEditError(null)
+                      }}
                       className="flex-1 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-xs font-semibold text-white transition-colors"
+                      disabled={editLoading}
+                      className="flex-1 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-xs font-semibold text-white transition-colors disabled:opacity-50"
                     >
-                      Save Changes
+                      {editLoading ? 'Saving...' : 'Save Changes'}
                     </button>
                   </div>
                 </form>
@@ -612,11 +668,17 @@ export default function MembersPage() {
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:bg-white focus:border-primary-500 text-sm transition-colors"
                   />
                 </div>
+                {addError && (
+                  <p className="text-xs text-red-500 font-bold bg-red-50 border border-red-100 rounded-lg p-2.5">
+                    ⚠️ {addError}
+                  </p>
+                )}
                 <button
                   type="submit"
-                  className="w-full btn-primary text-sm py-2.5 mt-4"
+                  disabled={addLoading}
+                  className="w-full btn-primary text-sm py-2.5 mt-4 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Create Member Profile
+                  {addLoading ? 'Creating...' : 'Create Member Profile'}
                 </button>
               </form>
             </motion.div>

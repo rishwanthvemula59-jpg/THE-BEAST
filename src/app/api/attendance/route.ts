@@ -7,8 +7,9 @@ export async function GET() {
       orderBy: { id: 'desc' }
     })
     return NextResponse.json({ data: attendance })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch attendance logs' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Failed to fetch attendance:', error)
+    return NextResponse.json({ error: error.message || 'Failed to fetch attendance logs' }, { status: 500 })
   }
 }
 
@@ -59,7 +60,8 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ data: record }, { status: 201 })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to log attendance check-in' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Failed to log attendance check-in:', error)
+    return NextResponse.json({ error: error.message || 'Failed to log attendance check-in' }, { status: 500 })
   }
 }
